@@ -26,6 +26,9 @@ import {
   mesclarDados,
   normalizarMeta,
 } from '../src/lib/migracao';
+import { metasDemo, metasSeed } from '../src/data/seed';
+import { ehRecorrente } from '../src/types';
+import { hojeISO } from '../src/lib/dates';
 import {
   atrasadas,
   cadenciaIrreal,
@@ -395,6 +398,23 @@ console.log('revisao');
   );
   eq('total soma apenas as pendencias reais', r.total, 2);
   ok('fila parada nao entra no total', r.filaParada.length > 0 && r.total === 2);
+}
+
+// ── Demonstração ──────────────────────────────────────────────────────────
+{
+  const demo = metasDemo(metasSeed());
+  const hojeDemo = hojeISO();
+  const ativas = demo.filter((m) => ehRecorrente(m) && m.status === 'ativa');
+
+  ok('demo tem recorrentes ativas com passado', ativas.length > 0 && ativas.every((m) => m.historico.length > 0));
+  ok('demo deixa hoje em aberto', demo.every((m) => !m.historico.includes(hojeDemo)));
+  ok('demo so cumpre dias devidos', demo.every((m) => m.historico.every((d) => devidaEm(m, d))));
+  ok('demo abre com sequencia de pelo menos 5', ativas.every((m) => streakRecorrente(m) >= 5));
+  ok(
+    'demo nao inventa passado para o que esta na fila',
+    demo.filter((m) => m.status !== 'ativa').every((m) => m.historico.length === 0),
+  );
+  eq('demo e estavel entre recargas', JSON.stringify(metasDemo(metasSeed()).map((m) => m.historico)), JSON.stringify(demo.map((m) => m.historico)));
 }
 
 console.log('');

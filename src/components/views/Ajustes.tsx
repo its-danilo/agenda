@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { sincronizarAgora, useSyncStore } from '../../lib/sync';
 import { normalizarDados } from '../../lib/migracao';
 import { SincronizacaoBadge } from '../SincronizacaoBadge';
+import { emDemo, recomecarDemo, sairDaDemo } from '../../lib/demo';
 
 export function Ajustes() {
   const { etiquetas, prioridades } = useStore();
@@ -33,6 +34,7 @@ export function Ajustes() {
   const [salvandoSenha, setSalvandoSenha] = useState(false);
 
   useEffect(() => {
+    if (emDemo) return;
     supabase?.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
   }, []);
 
@@ -115,109 +117,137 @@ export function Ajustes() {
         <p className="text-sm text-slate-400">Conta, etiquetas, prioridades e backup.</p>
       </header>
 
-      {/* Conta e sincronização */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Conta</h2>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium text-slate-200">
-                {email === undefined ? 'carregando...' : (email ?? 'sem sessão')}
-              </div>
-              <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                <SincronizacaoBadge />
-              </div>
-              {ultimoSync && (
-                <div className="mt-0.5 text-[11px] text-slate-600">
-                  Última sincronização: {new Date(ultimoSync).toLocaleString('pt-BR')}
-                </div>
-              )}
-              {erroSync && <div className="mt-0.5 text-[11px] text-red-400">{erroSync}</div>}
-            </div>
-            <div className="flex flex-wrap gap-2">
+      {emDemo && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Conta</h2>
+          <div className="rounded-xl border border-violet-900/70 bg-violet-950/30 p-4">
+            <p className="text-sm text-violet-100/90">
+              Você está na demonstração: sem conta e sem sincronização. As mudanças ficam só
+              neste navegador.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
               <button
-                onClick={() => void sincronizarAgora()}
+                onClick={recomecarDemo}
                 className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium hover:bg-slate-700"
               >
-                ⟳ Sincronizar
+                ↺ Recomeçar a demonstração
               </button>
               <button
-                onClick={() => {
-                  setTrocandoSenha((v) => !v);
-                  setSenhaErro(null);
-                  setSenhaOk(false);
-                }}
-                className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium hover:bg-slate-700"
-              >
-                🔑 Trocar senha
-              </button>
-              <button
-                onClick={() => void sair()}
+                onClick={sairDaDemo}
                 className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
               >
                 Sair
               </button>
             </div>
           </div>
+        </section>
+      )}
 
-          {senhaOk && (
-            <p className="mt-3 rounded-lg bg-emerald-950/60 px-3 py-2 text-sm text-emerald-300">
-              Senha alterada. Ela vale em todos os aparelhos no próximo login.
-            </p>
-          )}
-
-          {trocandoSenha && (
-            <form onSubmit={trocarSenha} className="mt-3 space-y-2">
-              <input
-                type="password"
-                value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                placeholder="Nova senha"
-                autoComplete="new-password"
-                autoFocus
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm outline-none focus:border-emerald-500"
-              />
-              <input
-                type="password"
-                value={confirmaSenha}
-                onChange={(e) => setConfirmaSenha(e.target.value)}
-                placeholder="Repita a nova senha"
-                autoComplete="new-password"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm outline-none focus:border-emerald-500"
-              />
-              {senhaErro && (
-                <p className="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">{senhaErro}</p>
-              )}
-              <div className="flex gap-2">
+      {/* Conta e sincronização */}
+      {!emDemo && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Conta</h2>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium text-slate-200">
+                  {email === undefined ? 'carregando...' : (email ?? 'sem sessão')}
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                  <SincronizacaoBadge />
+                </div>
+                {ultimoSync && (
+                  <div className="mt-0.5 text-[11px] text-slate-600">
+                    Última sincronização: {new Date(ultimoSync).toLocaleString('pt-BR')}
+                  </div>
+                )}
+                {erroSync && <div className="mt-0.5 text-[11px] text-red-400">{erroSync}</div>}
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <button
-                  type="submit"
-                  disabled={salvandoSenha}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                  onClick={() => void sincronizarAgora()}
+                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium hover:bg-slate-700"
                 >
-                  {salvandoSenha ? 'Salvando...' : 'Salvar senha'}
+                  ⟳ Sincronizar
                 </button>
                 <button
-                  type="button"
                   onClick={() => {
-                    setTrocandoSenha(false);
-                    setNovaSenha('');
-                    setConfirmaSenha('');
+                    setTrocandoSenha((v) => !v);
                     setSenhaErro(null);
+                    setSenhaOk(false);
                   }}
-                  className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium hover:bg-slate-700"
                 >
-                  Cancelar
+                  🔑 Trocar senha
+                </button>
+                <button
+                  onClick={() => void sair()}
+                  className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
+                >
+                  Sair
                 </button>
               </div>
-            </form>
-          )}
+            </div>
 
-          <p className="mt-3 text-xs text-slate-500">
-            Suas metas ficam na sua conta e aparecem em qualquer aparelho onde você entrar. Sem
-            internet o app continua funcionando e envia as mudanças quando a conexão voltar.
-          </p>
-        </div>
-      </section>
+            {senhaOk && (
+              <p className="mt-3 rounded-lg bg-emerald-950/60 px-3 py-2 text-sm text-emerald-300">
+                Senha alterada. Ela vale em todos os aparelhos no próximo login.
+              </p>
+            )}
+
+            {trocandoSenha && (
+              <form onSubmit={trocarSenha} className="mt-3 space-y-2">
+                <input
+                  type="password"
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  placeholder="Nova senha"
+                  autoComplete="new-password"
+                  autoFocus
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                />
+                <input
+                  type="password"
+                  value={confirmaSenha}
+                  onChange={(e) => setConfirmaSenha(e.target.value)}
+                  placeholder="Repita a nova senha"
+                  autoComplete="new-password"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                />
+                {senhaErro && (
+                  <p className="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">{senhaErro}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={salvandoSenha}
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                  >
+                    {salvandoSenha ? 'Salvando...' : 'Salvar senha'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTrocandoSenha(false);
+                      setNovaSenha('');
+                      setConfirmaSenha('');
+                      setSenhaErro(null);
+                    }}
+                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <p className="mt-3 text-xs text-slate-500">
+              Suas metas ficam na sua conta e aparecem em qualquer aparelho onde você entrar. Sem
+              internet o app continua funcionando e envia as mudanças quando a conexão voltar.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Prioridades */}
       <section className="space-y-2">

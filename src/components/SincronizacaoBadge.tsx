@@ -1,5 +1,6 @@
 import { useStore } from '../store';
 import { sincronizarAgora, useSyncStore, type SituacaoSync } from '../lib/sync';
+import { emDemo } from '../lib/demo';
 
 const APARENCIA: Record<SituacaoSync, { emoji: string; texto: string; cor: string }> = {
   ocioso: { emoji: '✓', texto: 'Sincronizado', cor: 'text-emerald-500' },
@@ -11,6 +12,21 @@ const APARENCIA: Record<SituacaoSync, { emoji: string; texto: string; cor: strin
 
 /** Indicador discreto: o app funciona offline, mas você precisa saber disso. */
 export function SincronizacaoBadge({ compacto = false }: { compacto?: boolean }) {
+  if (emDemo) {
+    return (
+      <span
+        title="Dados de exemplo, salvos só neste navegador"
+        className="inline-flex items-center gap-1.5 text-[11px] text-violet-400"
+      >
+        <span>●</span>
+        {!compacto && <span>Demonstração</span>}
+      </span>
+    );
+  }
+  return <BadgeDaConta compacto={compacto} />;
+}
+
+function BadgeDaConta({ compacto }: { compacto: boolean }) {
   const situacao = useSyncStore((s) => s.situacao);
   const pendentes = useStore(
     (s) => s.sujos.metas.length + s.sujos.etiquetas.length + s.sujos.prioridades.length,

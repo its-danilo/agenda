@@ -1,5 +1,7 @@
 import type { Etiqueta, Meta, Prioridade } from '../types';
-import { estimativaParaDataAlvo } from '../lib/dates';
+import { ehRecorrente } from '../types';
+import { diaISO, estimativaParaDataAlvo, hojeISO } from '../lib/dates';
+import { devidaEm } from '../lib/recorrencia';
 
 export const PRIORIDADES_SEED: Prioridade[] = [
   { id: 'p1', nome: 'Urgente', cor: '#ef4444', ordem: 0 },
@@ -155,3 +157,58 @@ export function metasSeed(): Meta[] {
 }
 
 export const SEED_VERSION = 1;
+
+// ── Demonstração (?demo) ───────────────────────────────────────────────────
+
+/** Dias de passado inventado: o bastante para o mapa de constância ter forma. */
+const DIAS_DEMO = 45;
+
+/** 0–1 estável para o mesmo texto: a demo não muda a cada recarga. */
+function sorteio(texto: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < texto.length; i++) h = Math.imul(h ^ texto.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+
+/**
+ * As metas do seed com um passado: criadas há 45 dias, com dias cumpridos nas
+ * recorrentes ativas (uma sequência atual de 5 a 24 devidos, diferente em cada
+ * meta, e antes dela uma falha e dias soltos) e hoje em aberto, para o
+ * visitante poder marcar.
+ */
+export function metasDemo(metas: Meta[]): Meta[] {
+  const criadaEm = new Date(Date.now() - DIAS_DEMO * 86_400_000).toISOString();
+  const hoje = hojeISO();
+
+  return metas.map((original) => {
+    const m: Meta = { ...original, criadaEm };
+
+    if (m.id === 'm-organizar-fotos') return { ...m, agendadaPara: hoje };
+    if (m.id === 'm-projeto-pessoal') {
+      return {
+        ...m,
+        subtarefas: [
+          { id: 'demo-s1', titulo: 'Definir o escopo do MVP', feita: true },
+          { id: 'demo-s2', titulo: 'Montar o protótipo das telas', feita: true },
+          { id: 'demo-s3', titulo: 'Implementar o login', feita: false },
+          { id: 'demo-s4', titulo: 'Publicar a primeira versão', feita: false },
+        ],
+      };
+    }
+
+    if (!ehRecorrente(m) || m.status !== 'ativa') return m;
+
+    const sequencia = 5 + Math.floor(sorteio(m.id) * 20);
+    const historico: string[] = [];
+    let devidos = 0;
+    for (let i = 1; i <= DIAS_DEMO; i++) {
+      const dia = diaISO(-i);
+      if (!devidaEm(m, dia)) continue;
+      devidos++;
+      if (devidos <= sequencia || (devidos > sequencia + 1 && sorteio(m.id + dia) < 0.75)) {
+        historico.push(dia);
+      }
+    }
+    return { ...m, historico: historico.sort() };
+  });
+}

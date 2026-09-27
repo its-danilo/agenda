@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Meta } from './types';
 import type { DadosExportados, Vista } from './store';
-import { limparStoreDaSessao, prepararStoreParaUsuario, useStore } from './store';
+import {
+  limparStoreDaSessao,
+  prepararStoreParaDemo,
+  prepararStoreParaUsuario,
+  useStore,
+} from './store';
 import { supabase, supabaseConfigurado } from './lib/supabase';
 import { iniciarSync, marcarContaSemeada, pararSync, sincronizarAgora } from './lib/sync';
 import { lerDadosAntigos, marcarMigracaoFeita, migracaoJaFeita } from './lib/migracao';
+import { emDemo, recomecarDemo, sairDaDemo } from './lib/demo';
 import { NavBar } from './components/NavBar';
 import { MetaForm } from './components/MetaForm';
 import { MigracaoAntiga } from './components/MigracaoAntiga';
@@ -32,13 +38,56 @@ function useDesktop() {
 type Fase = 'carregando' | 'deslogado' | 'preparando' | 'migracao' | 'pronto' | 'erro';
 
 export default function App() {
+  return emDemo ? <AppDemo /> : <AppConta />;
+}
+
+/** A demonstração pública: sem login, sem nuvem, dados de exemplo neste navegador. */
+function AppDemo() {
+  const [pronto, setPronto] = useState(false);
+
+  useEffect(() => {
+    void prepararStoreParaDemo().then(() => setPronto(true));
+  }, []);
+
+  if (!pronto) return <Carregando texto="" />;
+
+  return (
+    <>
+      <Principal faixa={<FaixaDemo />} />
+      <AvisoAtualizacao />
+    </>
+  );
+}
+
+function FaixaDemo() {
+  return (
+    <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-violet-900/70 bg-violet-950/40 px-4 py-3 text-sm">
+      <p className="min-w-0 flex-1 text-violet-100/90">
+        <span className="font-semibold text-violet-200">Demonstração</span> com dados de exemplo.
+        Mexa à vontade: tudo fica só neste navegador.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={recomecarDemo}
+          className="rounded-lg border border-violet-800 px-3 py-1.5 text-xs font-medium text-violet-200 hover:bg-violet-900/50"
+        >
+          Recomeçar
+        </button>
+        <button
+          onClick={sairDaDemo}
+          className="rounded-lg bg-violet-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-600"
+        >
+          Sair
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AppConta() {
   const [fase, setFase] = useState<Fase>('carregando');
   const [erro, setErro] = useState<string | null>(null);
   const [antigos, setAntigos] = useState<DadosExportados | null>(null);
-  const [vista, setVista] = useState<Vista>('hoje');
-  const [form, setForm] = useState<Meta | 'nova' | null>(null);
-  const desktop = useDesktop();
-
   // Evita preparar duas vezes o mesmo usuário (StrictMode roda os efeitos 2x em dev).
   const usuarioPreparado = useRef<string | null>(null);
   const precisaSemear = useRef(false);
@@ -168,10 +217,25 @@ export default function App() {
   }
 
   return (
+    <>
+      <Principal />
+      {aviso}
+    </>
+  );
+}
+
+/** O app em si: navegação, a vista atual e o formulário de meta. */
+function Principal({ faixa }: { faixa?: ReactNode }) {
+  const [vista, setVista] = useState<Vista>('hoje');
+  const [form, setForm] = useState<Meta | 'nova' | null>(null);
+  const desktop = useDesktop();
+
+  return (
     <div className="flex min-h-screen">
       {desktop && <NavBar vista={vista} setVista={setVista} orientacao="vertical" />}
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-24 pt-5 md:pb-8">
+        {faixa}
         {vista === 'hoje' && <Hoje onEditar={setForm} onRevisar={() => setVista('revisao')} />}
         {vista === 'agenda' && <Agenda onEditar={setForm} />}
         {vista === 'metas' && <Metas onEditar={setForm} onNova={() => setForm('nova')} />}
@@ -194,7 +258,6 @@ export default function App() {
       {!desktop && <NavBar vista={vista} setVista={setVista} orientacao="horizontal" />}
 
       {form !== null && <MetaForm meta={form} onFechar={() => setForm(null)} />}
-      {aviso}
     </div>
   );
 }

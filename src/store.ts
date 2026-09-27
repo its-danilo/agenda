@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Etiqueta, Meta, Prioridade, Status, Subtarefa } from './types';
 import type { Tabela } from './lib/mapeamento';
-import { ETIQUETAS_SEED, PRIORIDADES_SEED, metasSeed } from './data/seed';
+import { ETIQUETAS_SEED, PRIORIDADES_SEED, metasDemo, metasSeed } from './data/seed';
 import { hojeISO } from './lib/dates';
 
 export type Vista = 'hoje' | 'agenda' | 'metas' | 'revisao' | 'foco' | 'progresso' | 'ajustes';
@@ -135,6 +135,7 @@ function estadoVazio() {
 }
 
 export const CHAVE_ANONIMA = 'agenda-anon';
+export const CHAVE_DEMO = 'agenda-demo';
 export const chaveDoUsuario = (userId: string) => `agenda-u-${userId}`;
 
 export const useStore = create<Estado>()(
@@ -540,6 +541,20 @@ export async function prepararStoreParaUsuario(userId: string) {
   useStore.persist.setOptions({ name: chaveDoUsuario(userId) });
   await useStore.persist.rehydrate();
   useStore.setState({ usuarioId: userId });
+}
+
+/**
+ * Demonstração pública: cache próprio neste navegador, metas de exemplo com
+ * passado inventado, e nenhuma sincronização. Nada daqui chega à nuvem.
+ */
+export async function prepararStoreParaDemo() {
+  useStore.setState({ ...estadoVazio(), usuarioId: null });
+  useStore.persist.setOptions({ name: CHAVE_DEMO });
+  await useStore.persist.rehydrate();
+  if (!useStore.getState().semeado) {
+    useStore.getState().semear();
+    useStore.setState((s) => ({ metas: metasDemo(s.metas), sujos: SUJOS_VAZIOS }));
+  }
 }
 
 /** Limpa a memória ao sair, sem apagar o cache em disco (o próximo login volta rápido). */

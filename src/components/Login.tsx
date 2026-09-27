@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { exigirSupabase } from '../lib/supabase';
+import { entrarNaDemo } from '../lib/demo';
 
 type Modo = 'entrar' | 'criar' | 'recuperar';
 
@@ -75,7 +76,7 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
       <form
         onSubmit={submeter}
         className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl shadow-black/40"
@@ -171,6 +172,17 @@ export function Login() {
           )}
         </div>
       </form>
+
+      <p className="text-sm text-slate-500">
+        Só quer conhecer o app?{' '}
+        <button
+          type="button"
+          onClick={entrarNaDemo}
+          className="font-medium text-violet-400 hover:text-violet-300"
+        >
+          Ver demonstração →
+        </button>
+      </p>
     </div>
   );
 }

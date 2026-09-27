@@ -5,6 +5,12 @@ constância (streaks). Os dados ficam na **sua conta**, sincronizados entre celu
 continua funcionando **offline** — as mudanças sobem sozinhas quando a conexão volta. Instalável
 como app (PWA).
 
+## Demonstração
+
+Abra o app com `?demo` no fim do endereço (ou clique em **Ver demonstração** na tela de login)
+para usar sem conta: ele abre com metas de exemplo e algumas semanas de histórico inventado. Nada
+vai para a nuvem; as mudanças ficam só naquele navegador, e **Recomeçar** volta ao exemplo.
+
 ## Ideia central: Foco Ativo
 
 Você tem muitas metas, mas não dá para fazer todas ao mesmo tempo. Cada item tem um **status**
